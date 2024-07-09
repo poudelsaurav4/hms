@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Medical Record</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 20px;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        p {
+            color: #666;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 5px;
+        }
+        .image-container {
+            text-align: center;
+            margin-top: 10px;
+        }
+        img {
+            max-width: 200px;
+            height: 200px;
+            border-radius: 8px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+        }
+        .date {
+            font-style: italic;
+            font-size: 14px;
+            color: #888;
+            margin-top: 5px;
+        }
+        .download-link:hover {
+            background-color: #45a049;
+        }
+
+        @media print {
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        {% for record in records %}
+        <div class="record">
+            <h1>{{ record.patient.username }}'s Medical Record</h1>
+            <p><strong>Patient Name:</strong> {{ record.patient.username }}</p>
+            <p><strong>Doctor Name:</strong> Dr. {{ record.doctor.first_name }}</p>
+            <p><strong>Diagnosis:</strong> {{ record.diagnosis }}</p>
+            <p><strong>Treatment:</strong> {{ record.treatment }}</p>
+            <p><strong>Test Results:</strong> {{ record.test_results }}</p>
+            
+            {% if record.report_img %}
+            <div class="image-container">
+                <p><strong>Report Image:</strong></p>
+                <img src="{{ record.report_img.url }}" alt="Report Image" />
+            </div>
+            {% endif %}
+            
+            <p><strong>Progress Notes:</strong> {{ record.progress_notes }}</p>
+            <p class="date"><strong>Date Created:</strong> {{ record.date_created}}</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <a href="{% url 'pdf' %}" class="no-print">Download PDF</a>
+</body>
+</html>

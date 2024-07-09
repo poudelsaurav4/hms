@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prescription Record</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 20px;
+        }
+        .prescription {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            margin: auto;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            font-size: 24px;
+        }
+        p {
+            color: #666;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+        .doctor {
+            font-weight: bold;
+        }
+        .patient {
+            font-style: italic;
+        }
+        .medication {
+            color: #008080; /* Dark teal */
+        }
+        .dosage {
+            color: #800080; /* Purple */
+        }
+        .duration {
+            color: #008000; /* Green */
+        }
+        .instruction {
+            color: #0000FF; /* Blue */
+        }
+        @media print {
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="prescription">
+        {% for record in records%}
+        <h1>{{ record.patient.username }}'s Prescription Record</h1>
+        <p class="doctor">Prescribed by: Dr. {{ record.doctor.first_name }}</p>   
+        <p class="patient">Patient: Mr. {{ record.patient.username }}</p>
+        <p class="medication">Medication: {{ record.medication }}</p>
+        <p class="dosage">Dosage: {{ record.dosage }}</p>
+        <p class="duration">Duration: {{ record.duration }}</p>
+        <p class="instruction">Instruction: {{ record.instruction }}</p>
+        <a class ="no-print" href="{%url 'prescription'%}">Download</a>
+        {%endfor%}
+    </div>
+</body>
+</html>
