@@ -61,16 +61,37 @@ class AppointmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Appointment
         fields = ['id','appointment_date','appointment_time','whatfor' ,'status', 'doctor','patient']
+        # unique_together = ('appointment_date','appointment_time','doctor','patient')
+        
+    def validate(self, data):
+        appointment_date = data.get('appointment_date')
+        appointment_time = data.get('appointment_time')
+        patient = data.get('patient')
+        doctor = data.get('doctor')
 
-    def validate_appointment_date(self, value):
-        if value< date.today():
-            raise serializers.ValidationError("Appointment date should be date from tommorow")
+
+        existing_appointment = Appointment.objects.filter(appointment_date=appointment_date,appointment_time=appointment_time,doctor=doctor).exists()
+        existing_appointment_date = Appointment.objects.filter(appointment_date=appointment_date,patient= patient)
+
+
+        if existing_appointment_date:
+            raise serializers.ValidationError({'appointment_date':'appointment already exist at this date'})
+        
+
+        if existing_appointment:
+            raise serializers.ValidationError({'appointment_time':'appointment already exist at this time'})
+        
+
+        if appointment_date<= date.today():
+            raise serializers.ValidationError({'appointment_date':"Appointment date should be date from tommorow"})
+        
+        
+        if not (appointment_time.hour >= 6 and appointment_time.hour < 18):  
+            raise serializers.ValidationError({'appointment_time':"Appointments can only be scheduled between 6 am and 6 pm."})
+
+
+        return data
     
-    def validate_appointment_time(self,value):
-        if not (value.hour >= 6 and value.hour < 18):  
-            raise serializers.ValidationError('Appointments can only be scheduled between 6 am and 6 pm.')
-
-
     def get_fields(self):
         fields = super().get_fields()
         request = self.context['request']
