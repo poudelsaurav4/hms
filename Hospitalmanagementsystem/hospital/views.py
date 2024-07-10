@@ -17,6 +17,8 @@ from rest_framework.renderers import TemplateHTMLRenderer
 from xhtml2pdf import pisa
 from django.http import HttpResponse
 from rest_framework.authtoken.models import Token
+from .router import ConditionalRouter
+from rest_framework.decorators import api_view, permission_classes
 
 # from custom_renderer import JPEGRenderer, PNGRenderer
 # Create your views here.
@@ -72,13 +74,12 @@ class CommentPermission(permissions.BasePermission):
         if request.user in patient:
             if request.method == "POST":
                 return True
-        if request.user in assistant:
+        if request.user in assistant or not request.user.is_authenticated:
             if request.method == "GET":
                 return True
             return False
         if request.user in doctor:
             return False
-        
         return True
     
     # def has_object_permission(self, request, view, obj):
@@ -184,8 +185,9 @@ class OnlyDocAppointment(viewsets.ModelViewSet):
 class CommentList(viewsets.ModelViewSet):
     queryset = Comments.objects.all()
     serializer_class = CommentSerializer
-    permission_classes= [CommentPermission, IsAuthenticated]
+    permission_classes= [CommentPermission]
     http_method_names = ['get', 'post']
+
 
 def new_password(request):
     if request.method == 'POST':

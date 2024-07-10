@@ -1,4 +1,4 @@
-from datetime import date
+import datetime 
 from rest_framework import serializers
 from hospital.models import *
 from django.contrib.auth import authenticate
@@ -8,6 +8,7 @@ from django.db import IntegrityError
 from django.contrib.auth.models import Group, Permission
 from django.core.exceptions import ValidationError
 from django.contrib.auth.hashers import make_password
+from django.utils import timezone
 
 import re
 
@@ -22,6 +23,16 @@ class RegisterSerializer(serializers.ModelSerializer):
         if data['username'] == data['first_name']:
             raise serializers.ValidationError({'username':'username cannnot be same as firstname'})
         return data
+    
+    def validate_first_name(self, first_name):
+        if re.search(r'[ !@#$%^&*()_+=\[{\]};:<>|./?\\\-]', first_name):
+            raise serializers.ValidationError("Firstname cannot contain special characters like @, #, _, -")
+        return first_name
+    
+    def validate_last_name(self, last_name):
+        if re.search(r'[ !@#$%^&*()_+=\[{\]};:<>|./?\\\-]', last_name):
+            raise serializers.ValidationError("Firstname cannot contain special characters like @, #, _, -")
+        return last_name
         
     # def validate_email(self, email):
     #     pattern = r'^(gmail|hotmail|yahoo)\.(com|org|edu|[a-z]{2})$'
@@ -32,6 +43,9 @@ class RegisterSerializer(serializers.ModelSerializer):
     def validate_password(self, password):
         if len(password)<=8 and password.isdigit():
             raise serializers.ValidationError('Your password should contain letters!')
+        if not re.search(r'[a-zA-Z0-9]', password):
+            raise serializers.ValidationError('Your password should contain at least one non-alphanumeric character!')
+
         return password  
    
     def create(self, validated_data):
@@ -81,11 +95,12 @@ class AppointmentSerializer(serializers.ModelSerializer):
         if existing_appointment:
             raise serializers.ValidationError({'appointment_time':'appointment already exist at this time'})
         
-
-        if appointment_date<= date.today():
+        
+        if appointment_date < datetime.date.today():
             raise serializers.ValidationError({'appointment_date':"Appointment date should be date from tommorow"})
         
-        
+        #  raise serializers.ValidationError({'appointment_time':"Current time cannot be selected"})
+
         if not (appointment_time.hour >= 6 and appointment_time.hour < 18):  
             raise serializers.ValidationError({'appointment_time':"Appointments can only be scheduled between 6 am and 6 pm."})
 
