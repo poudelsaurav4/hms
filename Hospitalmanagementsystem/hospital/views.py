@@ -298,3 +298,20 @@ def presciptiondownload(request):
         return HttpResponse(f'We had some errors <pre>{html}</pre>')
 
     return response
+
+
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.tokens import RefreshToken
+
+@api_view(['POST'])
+def obtain_token(request):
+    serializer = CustomUserSerializer(data=request.data)
+    if serializer.is_valid():
+        user = serializer.validated_data['user']
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+            'user': CustomUserSerializer(user).data
+        })
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -25,7 +25,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         return data
     
     def validate_first_name(self, first_name):
-        if re.search(r'[ !@#$%^&*()_+=\[{\]};:<>|./?\\\-]', first_name):
+        if re.search(r'[ !@#$%^&*()_+=\[{\]};:<>|./?\\\-0-9]', first_name):
             raise serializers.ValidationError("Firstname cannot contain special characters like @, #, _, -")
         return first_name
     
@@ -41,8 +41,8 @@ class RegisterSerializer(serializers.ModelSerializer):
     #     return email
     
     def validate_password(self, password):
-        if len(password)<=8 and password.isdigit():
-            raise serializers.ValidationError('Your password should contain letters!')
+        if len(password)<=8 or password.isdigit():
+            raise serializers.ValidationError('Your password should contain letters! or shouldnot be less than 8')
         if not re.search(r'[a-zA-Z0-9]', password):
             raise serializers.ValidationError('Your password should contain at least one non-alphanumeric character!')
 
@@ -181,7 +181,7 @@ class ForgotPasswordSerializer(serializers.ModelSerializer):
 class ResetPasswordSerializer(serializers.Serializer):
     username = serializers.CharField()
     password1 = serializers.CharField(write_only=True)
-    password2 = serializers.CharField(write_only=True)
+    confirm_password = serializers.CharField(write_only=True)
 
     def validate(self, data):
         if data['password1'] != data['password2']:
@@ -195,3 +195,8 @@ class ResetPasswordSerializer(serializers.Serializer):
         user.password = make_password(new_password)
         user.save()
         
+
+class CustomUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = ('id', 'username', 'email', 'gender', 'role', 'address', 'profile_pic')
