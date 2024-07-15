@@ -62,10 +62,14 @@ class RegisterSerializer(serializers.ModelSerializer):
     #     model = Assistant
     #     fields = ['id', 'user']
 
-    
+class PatchModelSerializer(serializers.ModelSerializer):
+    def __init__(self, *args, **kwargs):
+        kwargs['partial'] = True
+        super(PatchModelSerializer, self).__init__(*args, **kwargs)
 
 
-class AppointmentSerializer(serializers.ModelSerializer):
+
+class AppointmentSerializer(PatchModelSerializer):
     doctor = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.filter(role = 'Doctor'))
     patient = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.filter(role ='Patient'))
     # doctor_name = serializers.CharField(source = 'doctor.first_name')
@@ -86,7 +90,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
 
         existing_appointment = Appointment.objects.filter(appointment_date=appointment_date,appointment_time=appointment_time,doctor=doctor).exists()
         existing_appointment_date = Appointment.objects.filter(appointment_date=appointment_date,patient= patient)
-
+        
 
         if existing_appointment_date:
             raise serializers.ValidationError({'appointment_date':'appointment already exist at this date'})
@@ -96,28 +100,28 @@ class AppointmentSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'appointment_time':'appointment already exist at this time'})
         
         
-        if appointment_date < datetime.date.today():
-            raise serializers.ValidationError({'appointment_date':"Appointment date should be date from tommorow"})
+        # if appointment_date < datetime.date.today():
+        #     raise serializers.ValidationError({'appointment_date':"Appointment date should be date from tommorow"})
         
-        #  raise serializers.ValidationError({'appointment_time':"Current time cannot be selected"})
 
-        if not (appointment_time.hour >= 6 and appointment_time.hour < 18):  
-            raise serializers.ValidationError({'appointment_time':"Appointments can only be scheduled between 6 am and 6 pm."})
+        # if not (appointment_time.hour >= 6 and appointment_time.hour < 18):  
+        #     raise serializers.ValidationError({'appointment_time':"Appointments can only be scheduled between 6 am and 6 pm."})
 
 
         return data
+
     
-    def get_fields(self):
-        fields = super().get_fields()
-        request = self.context['request']
-        if request.method =='GET':
-            doctor_serializer = RegisterSerializer()
-            patient_serializer = RegisterSerializer()
-            doctor_serializer.fields = {'first_name': doctor_serializer.fields['first_name']}
-            patient_serializer.fields = {'first_name':patient_serializer.fields['first_name']}
-            fields['doctor'] = doctor_serializer
-            fields['patient'] = patient_serializer
-        return fields
+    # def get_fields(self):
+    #     fields = super().get_fields()
+    #     request = self.context['request']
+    #     if request.method =='GET':
+    #         doctor_serializer = RegisterSerializer()
+    #         patient_serializer = RegisterSerializer()
+    #         doctor_serializer.fields = {'first_name': doctor_serializer.fields['first_name']}
+    #         patient_serializer.fields = {'first_name':patient_serializer.fields['first_name']}
+    #         fields['doctor'] = doctor_serializer
+    #         fields['patient'] = patient_serializer
+    #     return fields
 
 
     # def to_representation(self, instance):
@@ -130,8 +134,8 @@ class MedicalRecordSerializer(serializers.ModelSerializer):
     class Meta:
         model = MedicalRecord
         fields = ['id','patient','doctor','diagnosis','treatment','test_results','report_img','progress_notes','date_created']
-    doctor = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.filter(role = 'Doctor'))
-    patient = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.filter(role ='Patient'))
+    doctor = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.filter(role = 'Doctor'),source = 'doctor.first_name')
+    patient = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.filter(role ='Patient'), source = 'patient.first_name')
     
 
 class PrescriptionSerializer(serializers.ModelSerializer):
@@ -139,8 +143,8 @@ class PrescriptionSerializer(serializers.ModelSerializer):
         model = Prescription
         fields = ['id','patient','doctor','medication', 'dosage','duration','instructions']
         
-    doctor = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.filter(role = 'Doctor'))
-    patient = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.filter(role ='Patient'))
+    doctor = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.filter(role = 'Doctor'), source = 'doctor.first_name')
+    patient = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.filter(role ='Patient'),source = 'patient.first_name')
     
 
 

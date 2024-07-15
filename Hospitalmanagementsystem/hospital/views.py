@@ -19,85 +19,19 @@ from django.http import HttpResponse
 from rest_framework.authtoken.models import Token
 from .router import ConditionalRouter
 from rest_framework.decorators import api_view, permission_classes
-
+from .permissions import *
 # from custom_renderer import JPEGRenderer, PNGRenderer
 # Create your views here.
-# class IsOwnerOrReadOnly(permissions.BasePermission):
-#     def has_permission(self, request, view):
-#         user = request.user
-#         if request.method == 'GET':
-#             return True
-#         else:
-#             if user.is_superuser:
-#                 return True
-#         return False
-
-class IsAssistant(permissions.BasePermission):
-    def has_permission(self, request, view):
-        assistant = CustomUser.objects.filter(role = 'Assitant')
-        if request.user in assistant:
-            return True
-        else:
-            if request.method == 'GET':
-                return True
-        return False    
-       
-
-class IsDoctor(permissions.BasePermission):
-    def has_permission(self, request, view):
-        doctor = CustomUser.objects.filter(role = 'Doctor')
-        if request.user in doctor:
-            return True
-        else:
-            if request.method == 'GET':
-                return True            
-        return False
-
-
-class IsPatient(permissions.BasePermission):
-    def has_permission(self, request, view):
-        patient = CustomUser.objects.filter(role = 'Patient')
-        if request.user in patient:
-            return True
-        else:
-            if request.method == 'GET':
-                return True
-        return True
-
-
-class CommentPermission(permissions.BasePermission):
-    def has_permission(self, request, view):
-        patient = CustomUser.objects.filter(role = 'Patient')
-        assistant = CustomUser.objects.filter(role = 'Assitant')
-        doctor = CustomUser.objects.filter(role = 'Doctor')
-
-        if request.user in patient:
-            if request.method == "POST":
-                return True
-        if request.user in assistant or not request.user.is_authenticated:
-            if request.method == "GET":
-                return True
-            return False
-        if request.user in doctor:
-            return False
-        return True
-    
-    # def has_object_permission(self, request, view, obj):
-    #     if request.method in permissions.SAFE_METHODS:
-    #         return True
-        
-    #     return obj.user == request.user
-    
-
 
 
 class Register(viewsets.ModelViewSet):
     # queryset = CustomUser.objects.all()
     serializer_class = RegisterSerializer
-    # permission_classes = [IsAssistant]
-    
+    permission_classes = [RegisterViewPermission]
+
     def get_queryset(self):
         user = self.request.user
+        
         if not user.is_authenticated:
             return CustomUser.objects.none()
             
@@ -121,8 +55,7 @@ class DocAppointment(viewsets.ModelViewSet):
     queryset= Appointment.objects.all()
     serializer_class = AppointmentSerializer
     permission_classes = [IsPatient | IsDoctor, IsAuthenticated]
-    # authentication_classes = [BasicAuthentication,SessionAuthentication]
-
+    
     def get_queryset(self):
 
         status_check = Appointment.objects.filter(status = 'completed')
@@ -133,7 +66,35 @@ class DocAppointment(viewsets.ModelViewSet):
             return Appointment.objects.all()
         return Appointment.objects.filter(Q(patient = self.request.user) | Q(doctor = self.request.user)).exclude(status= 'Completed')
 
+from rest_framework.generics import GenericAPIView
+from rest_framework.mixins import UpdateModelMixin
 
+class DocAppointmentUpdate(viewsets.ModelViewSet):
+    queryset= Appointment.objects.all()
+    serializer_class = AppointmentSerializer
+    permission_classes = [IsPatient | IsDoctor, IsAuthenticated]
+
+
+    # def get(self, request, *args, **kwargs):
+    #     appointment = self.get_object()
+    #     serializer = self.get_serializer(appointment)
+    #     return Response(serializer.data)
+
+    # def patch(self, request, *args, **kwargs):
+    #     return super().partial_update(request, *args, **kwargs)
+
+    # def partial_update(self, request, pk):
+    #     appointment = self.get_object(pk)
+    #     serializer = self.get_serializer(appointment, data=request.data, partial=True)
+
+    #     if serializer.is_valid():
+    #         serializer.save()
+    #         return Response(serializer.data, status=status.HTTP_200_OK)
+    #     else:
+    #         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+        
 class PatientMedicalRecord(viewsets.ModelViewSet):
     queryset = MedicalRecord.objects.all()
     serializer_class = MedicalRecordSerializer
@@ -153,7 +114,7 @@ class PatientMedicalRecord(viewsets.ModelViewSet):
         if user.role == 'Assitant':
             return MedicalRecord.objects.all()
         return MedicalRecord.objects.filter(Q(patient = self.request.user) | Q(doctor = self.request.user))
-    
+   
 
 class DocPrescription(viewsets.ModelViewSet):
     queryset = Prescription.objects.all()

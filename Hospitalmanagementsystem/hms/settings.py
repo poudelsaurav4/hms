@@ -155,9 +155,16 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.BasicAuthentication',
-        
-    ]
+        'rest_framework.authentication.BasicAuthentication', 
+    ],
+
+    # 'DEFAULT_PERMISSION_CLASSES': [
+    #     'hospital.permissions.IsAssistant',
+    #     'hospital.permissions.IsDoctor',
+    #     'hospital.permissions.IsPatient',
+    #     'hospital.permissions.RegisterViewPermission',
+    #     'hospital.permissions.CommentPermission',   
+    # ]
 }
 
 

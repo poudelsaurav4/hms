@@ -17,7 +17,6 @@ router.register(r'viewappointment', OnlyDocAppointment, basename='viewappointmen
 
 
 
-
 urlpatterns = [
     path('', include(router.urls)),
     # path('doctors/', DoctorCreateView.as_view(), name='doctor-create'),
@@ -28,6 +27,8 @@ urlpatterns = [
     path('pdf', html_to_pdf, name = 'pdf'),
     path('prescription',presciptiondownload, name = 'prescription'),
     path('resetpassword/', new_password, name='resetpassword'),
+    path('update/<int:pk>/', DocAppointmentUpdate.as_view({'get':'retrieve',
+                                                           'patch':'partial_update'}), name= 'update')
 
 ]
 if settings.DEBUG:
