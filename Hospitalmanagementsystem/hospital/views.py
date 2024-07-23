@@ -17,9 +17,12 @@ from rest_framework.renderers import TemplateHTMLRenderer
 from xhtml2pdf import pisa
 from django.http import HttpResponse
 from rest_framework.authtoken.models import Token
-from .router import ConditionalRouter
+# from .router import ConditionalRouter
 from rest_framework.decorators import api_view, permission_classes
 from .permissions import *
+from rest_framework.generics import GenericAPIView
+from rest_framework.mixins import UpdateModelMixin
+
 # from custom_renderer import JPEGRenderer, PNGRenderer
 # Create your views here.
 
@@ -64,10 +67,7 @@ class DocAppointment(viewsets.ModelViewSet):
         #     return Appointment.objects.exclude(status= 'completed')
         if user.role == 'Assitant':
             return Appointment.objects.all()
-        return Appointment.objects.filter(Q(patient = self.request.user) | Q(doctor = self.request.user)).exclude(status= 'Completed')
-
-from rest_framework.generics import GenericAPIView
-from rest_framework.mixins import UpdateModelMixin
+        return Appointment.objects.filter(Q(patient = self.request.user) | Q(doctor = self.request.user)).exclude(Q(status='Completed') | Q(status='Cancelled'))
 
 class DocAppointmentUpdate(viewsets.ModelViewSet):
     queryset= Appointment.objects.all()
@@ -100,14 +100,6 @@ class PatientMedicalRecord(viewsets.ModelViewSet):
     serializer_class = MedicalRecordSerializer
     permission_classes = [IsDoctor,IsAuthenticated]
     # authentication_classes = [BasicAuthentication, SessionAuthentication]
-
-
-    # def get_serializer_context(self):
-    #     context=  super(PatientMedicalRecord).get_serializer_context()
-    #     context.update({
-    #         'doctor': CustomUser.objects.get(role = "doctor").username
-    #     })
-        # return context
     
     def get_queryset(self):
         user = self.request.user
@@ -138,7 +130,7 @@ class OnlyDocAppointment(viewsets.ModelViewSet):
         if not self.request.user.is_authenticated:
             return CustomUser.objects.none()
         if self.request.user.role == 'Doctor':
-            return Appointment.objects.filter(doctor = self.request.user).exclude(status= 'Completed')
+            return Appointment.objects.filter(doctor = self.request.user).exclude(Q(status= 'Completed') | Q(status= 'Cancelled'))
 
         
         
@@ -276,3 +268,24 @@ def obtain_token(request):
             'user': CustomUserSerializer(user).data
         })
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class LeaveRequest(viewsets.ModelViewSet):
+    queryset = Leave.objects.all()
+    serializer_class = LeaveSerializer
+    permission_classes = [IsAssistant | IsDoctor]
+    def get_queryset(self):
+        user = self.request.user
+        
+        if user.role == 'Assistant':
+            return Leave.objects.filter().exclude(user=user)
+        
+        if user.role == 'Doctor':
+            return Leave.objects.filter(user = user)
+        
+    # def perform_destroy(self, instance):
+    #     if instance.status == 'Approved':
+    #         instance.delete()
+    #     else:
+    #         super().perform_destroy(instance)

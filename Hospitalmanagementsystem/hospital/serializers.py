@@ -9,6 +9,7 @@ from django.contrib.auth.models import Group, Permission
 from django.core.exceptions import ValidationError
 from django.contrib.auth.hashers import make_password
 from django.utils import timezone
+from django.db.models import Q
 
 import re
 
@@ -54,13 +55,6 @@ class RegisterSerializer(serializers.ModelSerializer):
         user = CustomUser.objects.create(**validated_data)
         
         return user
-    
-# class AssistantSerializer(serializers.ModelSerializer):
-    # user = RegisterSerializer()
-
-    # class Meta:
-    #     model = Assistant
-    #     fields = ['id', 'user']
 
 class PatchModelSerializer(serializers.ModelSerializer):
     def __init__(self, *args, **kwargs):
@@ -100,11 +94,11 @@ class AppointmentSerializer(PatchModelSerializer):
             raise serializers.ValidationError({'appointment_time':'appointment already exist at this time'})
         
         
-        # if appointment_date < datetime.date.today():
-        #     raise serializers.ValidationError({'appointment_date':"Appointment date should be date from tommorow"})
+        if appointment_date and appointment_date < datetime.date.today():
+            raise serializers.ValidationError({'appointment_date':"Appointment date should be date from tommorow"})
         
 
-        # if not (appointment_time.hour >= 6 and appointment_time.hour < 18):  
+        # if not (appointment_time and appointment_time.hour >= 6 and appointment_time.hour < 18):  
         #     raise serializers.ValidationError({'appointment_time':"Appointments can only be scheduled between 6 am and 6 pm."})
 
 
@@ -134,8 +128,8 @@ class MedicalRecordSerializer(serializers.ModelSerializer):
     class Meta:
         model = MedicalRecord
         fields = ['id','patient','doctor','diagnosis','treatment','test_results','report_img','progress_notes','date_created']
-    doctor = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.filter(role = 'Doctor'),source = 'doctor.first_name')
-    patient = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.filter(role ='Patient'), source = 'patient.first_name')
+    doctor = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.filter(role = 'Doctor'))
+    patient = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.filter(role ='Patient'))
     
 
 class PrescriptionSerializer(serializers.ModelSerializer):
@@ -143,8 +137,8 @@ class PrescriptionSerializer(serializers.ModelSerializer):
         model = Prescription
         fields = ['id','patient','doctor','medication', 'dosage','duration','instructions']
         
-    doctor = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.filter(role = 'Doctor'), source = 'doctor.first_name')
-    patient = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.filter(role ='Patient'),source = 'patient.first_name')
+    doctor = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.filter(role = 'Doctor'))
+    patient = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.filter(role ='Patient'))
     
 
 
@@ -204,3 +198,24 @@ class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = ('id', 'username', 'email', 'gender', 'role', 'address', 'profile_pic')
+
+
+
+
+class LeaveSerializer(serializers.ModelSerializer):
+    user = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.filter(Q(role = 'Doctor') | Q(role = 'Assitant')))
+
+    class Meta:
+        model = Leave
+        fields = ('id','user','no_of_leave','leave_type','leave_choice','from_date','to_date','reason','status')
+        read_only_fields = ['status']
+
+    def create(self, validated_data):
+        if self.context['request'].user.role == 'Assistant':
+            validated_data['status'] = 'Pending'
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        if self.context['request'].user.role == 'Assistant':
+            instance.status = validated_data.get('status', instance.status)
+        return super().update(instance, validated_data)

@@ -43,7 +43,7 @@ class Doctor(models.Model):
         ('is_available', 'is_available'),
         ('not_available', 'not_available'),
         ('sun-fri', 'sun-fri'),
-        ('wed-thurs', 'wed-thrus'),
+        ('wed-thurs', 'wed-thurs'),
         ('sat', 'sat')
     )
 
@@ -112,3 +112,32 @@ class Comments(models.Model):
 
     class Meta:
         ordering = ('created_on','comment')
+
+
+class Leave(models.Model):
+    LEAVE_TYPE={
+        ('CL', 'Casual Leave'),
+        ('SL', 'Sick Leave'),
+        ('ML', 'Medical Leave'),
+        ('Comp Off', 'Compensation')
+        }
+    
+    LEAVE_CHOICE = {
+        ('Full Day', 'Full Day Leave'),
+        ('First Half', 'First Half Only'),
+        ('Second Half', 'Second Half Only')
+        }
+    
+    LEAVE_STATUS = {
+        ('Approved', 'Approved'),
+        ('Rejected', 'Rejected'),
+        ('Pending', 'Pending')
+    }
+    user  = models.ForeignKey(CustomUser, related_name='applicant', on_delete=models.CASCADE)
+    leave_type = models.CharField(max_length=50, choices=LEAVE_TYPE)
+    leave_choice = models.CharField(max_length=50, choices=LEAVE_CHOICE, default='Full Day')
+    from_date = models.DateTimeField()
+    to_date = models.DateTimeField()
+    reason = models.TextField()
+    status = models.CharField(max_length=50, choices=LEAVE_STATUS, default='Pending')
+    no_of_leave = models.IntegerField(default=20)

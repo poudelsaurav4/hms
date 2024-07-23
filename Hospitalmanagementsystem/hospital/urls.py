@@ -14,6 +14,8 @@ router.register(r'medrecord', PatientMedicalRecord, basename='medrecord')
 router.register(r'prescription', DocPrescription, basename='prescription')
 router.register(r'comments', CommentList, basename='comments')
 router.register(r'viewappointment', OnlyDocAppointment, basename='viewappointment')
+router.register(r'leaverequest', LeaveRequest, basename='leaverequest')
+
 
 
 
